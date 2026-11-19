@@ -33,9 +33,9 @@ function ThematicLineLayer({ data, category, color, width, opacity = 1 }) {
         data={data}
         filter={filter}
         style={() => ({
-          color: '#000000',
-          weight: width + 2,
-          opacity,
+          color: '#293b31',
+          weight: width + 1.5,
+          opacity: opacity * 0.55,
           lineCap: 'round',
           lineJoin: 'round',
         })}
@@ -71,10 +71,10 @@ function AdministrativeBoundaryLayer({ areaData, lineData }) {
           data={areaData}
           style={() => ({
             color: '#39824e',
-            weight: 1,
-            opacity: 0.85,
+            weight: 1.1,
+            opacity: 0.9,
             fillColor: '#67aa72',
-            fillOpacity: 0.3,
+            fillOpacity: 0.18,
           })}
         />
       )}
@@ -83,18 +83,18 @@ function AdministrativeBoundaryLayer({ areaData, lineData }) {
           <GeoJSON
             data={lineData}
             style={() => ({
-              color: '#ffd480',
-              weight: 4.5,
-              opacity: 1,
+              color: '#f2d18e',
+              weight: 3.5,
+              opacity: 0.95,
               fill: false,
             })}
           />
           <GeoJSON
             data={lineData}
             style={() => ({
-              color: '#000000',
-              weight: 1.5,
-              opacity: 1,
+              color: '#294234',
+              weight: 1.2,
+              opacity: 0.95,
               fill: false,
             })}
             onEachFeature={(feature, layer) => {
@@ -131,6 +131,93 @@ function MapController({ selected, searchKey, boundaryData }) {
   return null
 }
 
+function LayerPanel({
+  boundaryData,
+  showBoundaryLayer,
+  setShowBoundaryLayer,
+  showElevationLayer,
+  setShowElevationLayer,
+  showSchoolLayer,
+  setShowSchoolLayer,
+  showArterialLayer,
+  setShowArterialLayer,
+  showCollectorLayer,
+  setShowCollectorLayer,
+  showLocalLayer,
+  setShowLocalLayer,
+  showEventLayer,
+  setShowEventLayer,
+  showNonEventLayer,
+  setShowNonEventLayer,
+  schoolCount,
+  arterialCount,
+  collectorCount,
+  localCount,
+  eventCount,
+  nonEventCount,
+}) {
+  return (
+    <section className="layer-panel">
+      <h2>Legenda dan layer</h2>
+      <label className="check-row">
+        <input type="checkbox" checked={showBoundaryLayer} onChange={(event) => setShowBoundaryLayer(event.target.checked)} />
+        <span className="layer-swatch boundary-swatch" aria-hidden="true" />
+        <span>Batas kecamatan</span>
+        <strong>{boundaryData?.features.length ?? 17}</strong>
+      </label>
+      <label className="check-row elevation-layer">
+        <input type="checkbox" checked={showElevationLayer} onChange={(event) => setShowElevationLayer(event.target.checked)} />
+        <span className="layer-swatch elevation-swatch" aria-hidden="true" />
+        <span>Elevasi</span>
+        <strong>103-2.436</strong>
+      </label>
+      <div className="elevation-legend" aria-label="Legenda elevasi, minimum 103 dan maksimum 2436">
+        <div className="elevation-gradient" />
+        <div className="elevation-range">
+          <span>Min 103</span>
+          <span>Max 2.436</span>
+        </div>
+      </div>
+      <label className="check-row school-layer">
+        <input type="checkbox" checked={showSchoolLayer} onChange={(event) => setShowSchoolLayer(event.target.checked)} />
+        <span className="layer-swatch school-swatch" aria-hidden="true" />
+        <span>Sekolah dasar</span>
+        <strong>{schoolCount || 128}</strong>
+      </label>
+      <label className="check-row arterial-layer">
+        <input type="checkbox" checked={showArterialLayer} onChange={(event) => setShowArterialLayer(event.target.checked)} />
+        <span className="layer-swatch arterial-swatch" aria-hidden="true" />
+        <span>Jalan arteri</span>
+        <strong>{arterialCount}</strong>
+      </label>
+      <label className="check-row collector-layer">
+        <input type="checkbox" checked={showCollectorLayer} onChange={(event) => setShowCollectorLayer(event.target.checked)} />
+        <span className="layer-swatch collector-swatch" aria-hidden="true" />
+        <span>Jalan kolektor</span>
+        <strong>{collectorCount}</strong>
+      </label>
+      <label className="check-row local-layer">
+        <input type="checkbox" checked={showLocalLayer} onChange={(event) => setShowLocalLayer(event.target.checked)} />
+        <span className="layer-swatch local-swatch" aria-hidden="true" />
+        <span>Jalan lokal</span>
+        <strong>{localCount}</strong>
+      </label>
+      <label className="check-row event-layer">
+        <input type="checkbox" checked={showEventLayer} onChange={(event) => setShowEventLayer(event.target.checked)} />
+        <span className="layer-swatch event-swatch" aria-hidden="true" />
+        <span>Titik kejadian longsor</span>
+        <strong>{eventCount}</strong>
+      </label>
+      <label className="check-row non-event-layer">
+        <input type="checkbox" checked={showNonEventLayer} onChange={(event) => setShowNonEventLayer(event.target.checked)} />
+        <span className="layer-swatch non-event-swatch" aria-hidden="true" />
+        <span>Titik non-kejadian</span>
+        <strong>{nonEventCount}</strong>
+      </label>
+    </section>
+  )
+}
+
 function App() {
   const [selected, setSelected] = useState(null)
   const [query, setQuery] = useState('')
@@ -142,6 +229,8 @@ function App() {
   const [showArterialLayer, setShowArterialLayer] = useState(true)
   const [showCollectorLayer, setShowCollectorLayer] = useState(true)
   const [showLocalLayer, setShowLocalLayer] = useState(true)
+  const [showMobileLayers, setShowMobileLayers] = useState(false)
+  const [searchMessage, setSearchMessage] = useState('')
   const [searchKey, setSearchKey] = useState('')
   const [boundaryData, setBoundaryData] = useState(null)
   const [boundaryError, setBoundaryError] = useState('')
@@ -241,11 +330,12 @@ function App() {
     }
   }, [])
 
-  const filteredLocations = locations.filter((item) =>
-    `${item.name} ${item.category} ${item.status} ${item.class} ${item.split}`.toLowerCase().includes(query.toLowerCase())
-  ).concat(schoolLocations.filter((item) =>
-    `${item.name} ${item.category}`.toLowerCase().includes(query.toLowerCase())
-  ))
+  const searchTerm = query.trim().toLowerCase()
+  const filteredLocations = [...locations, ...schoolLocations].filter((item) =>
+    `${item.name} ${item.category} ${item.status} ${item.class ?? ''} ${item.split ?? ''} ${item.kecamatan ?? ''}`
+      .toLowerCase()
+      .includes(searchTerm)
+  )
   const eventCount = locations.filter((item) => item.class === 1).length
   const nonEventCount = locations.filter((item) => item.class === 0).length
   const arterialCount = roadsData?.features.filter((feature) => feature.properties.jenis === 'Jalan Arteri').length ?? 28
@@ -258,24 +348,33 @@ function App() {
     schoolsError && `Gagal memuat titik sekolah dasar: ${schoolsError}`,
   ].filter(Boolean)
 
+  const selectLocation = (item) => {
+    setSelected(item)
+    setShowMobileLayers(false)
+  }
+
   const handleSearch = () => {
-    if (!query.trim()) {
+    if (!searchTerm) {
+      setSearchMessage('')
+      setSelected(null)
       setSearchKey('show-all')
       return
     }
-    const match = [...locations, ...schoolLocations].find((item) =>
-      `${item.name} ${item.category} ${item.status} ${item.class} ${item.split}`.toLowerCase().includes(query.toLowerCase())
-    )
-    if (match) setSelected(match)
+    if (filteredLocations.length === 0) {
+      setSearchMessage('Lokasi tidak ditemukan. Coba kata kunci lain.')
+      return
+    }
+    setSearchMessage('')
+    selectLocation(filteredLocations[0])
   }
 
   return (
     <main className="app">
-      <aside className="sidebar">
+      <aside id="mobile-location-drawer" className={`sidebar ${showMobileLayers ? 'sidebar-open' : ''}`}>
         <header className="brand">
           <img
             className="brand-mark"
-            src={assetUrl('logo-laboratorium-sig.jpg')}
+            src={assetUrl('logo-laboratorium-sig.png')}
             alt="Logo Laboratorium Sistem Informasi Geografis UNIMED"
           />
           <div>
@@ -290,86 +389,68 @@ function App() {
             <input
               id="location-search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setSearchMessage('')
+              }}
               onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
-              placeholder="Nama sekolah atau titik longsor"
+              placeholder="Cari sekolah / kecamatan"
             />
-            <button type="button" onClick={handleSearch} aria-label="Cari">Cari</button>
+            <button
+              className="search-clear"
+              type="button"
+              disabled={!query}
+              onClick={() => {
+                setQuery('')
+                setSearchMessage('')
+              }}
+              aria-label="Hapus pencarian"
+              title="Hapus pencarian"
+            >
+              ×
+            </button>
+            <button type="button" onClick={handleSearch}>Cari</button>
           </div>
+          {searchMessage && <p className="search-feedback" role="status">{searchMessage}</p>}
         </section>
 
-        <section className="layer-panel">
-          <h2>Tampilkan di peta</h2>
-          <label className="check-row">
-            <input type="checkbox" checked={showBoundaryLayer} onChange={(event) => setShowBoundaryLayer(event.target.checked)} />
-            <span className="layer-swatch boundary-swatch" aria-hidden="true" />
-            <span>Batas kecamatan</span>
-            <strong>{boundaryData?.features.length ?? 17}</strong>
-          </label>
-          <label className="check-row elevation-layer">
-            <input type="checkbox" checked={showElevationLayer} onChange={(event) => setShowElevationLayer(event.target.checked)} />
-            <span className="layer-swatch elevation-swatch" aria-hidden="true" />
-            <span>Elevasi</span>
-            <strong>103-2.436</strong>
-          </label>
-          {showElevationLayer && (
-            <div className="elevation-legend" aria-label="Legenda elevasi, minimum 103 dan maksimum 2436">
-              <div className="elevation-gradient" />
-              <div className="elevation-range">
-                <span>Min 103</span>
-                <span>Max 2.436</span>
-              </div>
-            </div>
-          )}
-          <label className="check-row school-layer">
-            <input type="checkbox" checked={showSchoolLayer} onChange={(event) => setShowSchoolLayer(event.target.checked)} />
-            <span className="layer-swatch school-swatch" aria-hidden="true" />
-            <span>Sekolah dasar</span>
-            <strong>{schoolLocations.length || 128}</strong>
-          </label>
-          <label className="check-row arterial-layer">
-            <input type="checkbox" checked={showArterialLayer} onChange={(event) => setShowArterialLayer(event.target.checked)} />
-            <span className="layer-swatch arterial-swatch" aria-hidden="true" />
-            <span>Jalan arteri</span>
-            <strong>{arterialCount}</strong>
-          </label>
-          <label className="check-row collector-layer">
-            <input type="checkbox" checked={showCollectorLayer} onChange={(event) => setShowCollectorLayer(event.target.checked)} />
-            <span className="layer-swatch collector-swatch" aria-hidden="true" />
-            <span>Jalan kolektor</span>
-            <strong>{collectorCount}</strong>
-          </label>
-          <label className="check-row local-layer">
-            <input type="checkbox" checked={showLocalLayer} onChange={(event) => setShowLocalLayer(event.target.checked)} />
-            <span className="layer-swatch local-swatch" aria-hidden="true" />
-            <span>Jalan lokal</span>
-            <strong>{localCount}</strong>
-          </label>
-          <label className="check-row event-layer">
-            <input type="checkbox" checked={showEventLayer} onChange={(event) => setShowEventLayer(event.target.checked)} />
-            <span className="layer-swatch event-swatch" aria-hidden="true" />
-            <span>Titik kejadian longsor</span>
-            <strong>{eventCount}</strong>
-          </label>
-          <label className="check-row non-event-layer">
-            <input type="checkbox" checked={showNonEventLayer} onChange={(event) => setShowNonEventLayer(event.target.checked)} />
-            <span className="layer-swatch non-event-swatch" aria-hidden="true" />
-            <span>Titik non-kejadian</span>
-            <strong>{nonEventCount}</strong>
-          </label>
-        </section>
+        <LayerPanel
+          boundaryData={boundaryData}
+          showBoundaryLayer={showBoundaryLayer}
+          setShowBoundaryLayer={setShowBoundaryLayer}
+          showElevationLayer={showElevationLayer}
+          setShowElevationLayer={setShowElevationLayer}
+          showSchoolLayer={showSchoolLayer}
+          setShowSchoolLayer={setShowSchoolLayer}
+          showArterialLayer={showArterialLayer}
+          setShowArterialLayer={setShowArterialLayer}
+          showCollectorLayer={showCollectorLayer}
+          setShowCollectorLayer={setShowCollectorLayer}
+          showLocalLayer={showLocalLayer}
+          setShowLocalLayer={setShowLocalLayer}
+          showEventLayer={showEventLayer}
+          setShowEventLayer={setShowEventLayer}
+          showNonEventLayer={showNonEventLayer}
+          setShowNonEventLayer={setShowNonEventLayer}
+          schoolCount={schoolLocations.length}
+          arterialCount={arterialCount}
+          collectorCount={collectorCount}
+          localCount={localCount}
+          eventCount={eventCount}
+          nonEventCount={nonEventCount}
+        />
 
         <section className="location-list">
           <div className="section-title">
             <h2>Lokasi di peta</h2>
-            <span>{filteredLocations.length}</span>
+            <span aria-live="polite">{filteredLocations.length} lokasi</span>
           </div>
           {filteredLocations.map((item) => (
             <button
               className={`location-card ${selected?.id === item.id ? 'active' : ''}`}
               key={item.id}
               type="button"
-              onClick={() => setSelected(item)}
+              onClick={() => selectLocation(item)}
             >
               <span className={`location-dot ${item.type === 'school' ? 'school-dot' : item.class === 1 ? 'event-dot' : 'non-event-dot'}`} />
               <span className="location-copy">
@@ -393,6 +474,50 @@ function App() {
       </aside>
 
       <section className="map-area">
+        {showMobileLayers && (
+          <button
+            className="mobile-drawer-backdrop"
+            type="button"
+            aria-label="Tutup pencarian dan daftar lokasi"
+            onClick={() => setShowMobileLayers(false)}
+          />
+        )}
+        <button
+          className="mobile-layers-toggle"
+          type="button"
+          aria-expanded={showMobileLayers}
+          aria-controls="mobile-location-drawer"
+          onClick={() => setShowMobileLayers((isOpen) => !isOpen)}
+        >
+          {showMobileLayers ? 'Tutup pencarian' : 'Cari lokasi'}
+        </button>
+        <div className="mobile-legend-panel">
+          <LayerPanel
+            boundaryData={boundaryData}
+            showBoundaryLayer={showBoundaryLayer}
+            setShowBoundaryLayer={setShowBoundaryLayer}
+            showElevationLayer={showElevationLayer}
+            setShowElevationLayer={setShowElevationLayer}
+            showSchoolLayer={showSchoolLayer}
+            setShowSchoolLayer={setShowSchoolLayer}
+            showArterialLayer={showArterialLayer}
+            setShowArterialLayer={setShowArterialLayer}
+            showCollectorLayer={showCollectorLayer}
+            setShowCollectorLayer={setShowCollectorLayer}
+            showLocalLayer={showLocalLayer}
+            setShowLocalLayer={setShowLocalLayer}
+            showEventLayer={showEventLayer}
+            setShowEventLayer={setShowEventLayer}
+            showNonEventLayer={showNonEventLayer}
+            setShowNonEventLayer={setShowNonEventLayer}
+            schoolCount={schoolLocations.length}
+            arterialCount={arterialCount}
+            collectorCount={collectorCount}
+            localCount={localCount}
+            eventCount={eventCount}
+            nonEventCount={nonEventCount}
+          />
+        </div>
         <header className="map-header">
           <div>
             <p>{selected ? 'Lokasi dipilih' : 'Cakupan peta'}</p>
@@ -415,7 +540,7 @@ function App() {
               <ImageOverlay
                 url={assetUrl('data/elevation-karo.png')}
                 bounds={[[2.829693144976493, 97.90378955505017], [3.330953073515186, 98.63052661990287]]}
-                opacity={1}
+                opacity={0.58}
                 alt="Model elevasi Kabupaten Karo"
               />
             </Pane>
@@ -437,7 +562,7 @@ function App() {
                     opacity: 1,
                     weight: 1,
                   }}
-                  eventHandlers={{ click: () => setSelected(school) }}
+                  eventHandlers={{ click: () => selectLocation(school) }}
                 >
                   <Tooltip>{school.name}</Tooltip>
                 </CircleMarker>
@@ -448,26 +573,27 @@ function App() {
             <ThematicLineLayer
               data={roadsData}
               category="Jalan Arteri"
-              color="#ff80ff"
-              width={3}
+              color="#a34db6"
+              width={2.5}
+              opacity={0.9}
             />
           )}
           {roadsData && showCollectorLayer && (
             <ThematicLineLayer
               data={roadsData}
               category="Jalan Kolektor"
-              color="#ffb3ff"
-              width={2.5}
-              opacity={0.65}
+              color="#c68732"
+              width={2}
+              opacity={0.6}
             />
           )}
           {roadsData && showLocalLayer && (
             <ThematicLineLayer
               data={roadsData}
               category="Jalan Lokal"
-              color="#ff8766"
-              width={1.75}
-              opacity={0.45}
+              color="#c76d56"
+              width={1.5}
+              opacity={0.32}
             />
           )}
           <Pane name="classifiedPoints" style={{ zIndex: 625 }}>
@@ -485,7 +611,7 @@ function App() {
                     opacity: 1,
                     weight: 1.25,
                   }}
-                  eventHandlers={{ click: () => setSelected(item) }}
+                  eventHandlers={{ click: () => selectLocation(item) }}
                 >
                   <Tooltip>
                     <strong>{item.name}</strong><br />{item.category}

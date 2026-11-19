@@ -32,6 +32,8 @@ Periode 2024–2025 pada nama titik kejadian menggambarkan konteks data, bukan t
 
 Simbol batas dan jalan mengacu pada Lampiran C Peraturan BIG No. 3 Tahun 2016, lalu disesuaikan agar terbaca di layar. Jalan lokal dan kolektor dibuat lebih redup supaya batas wilayah dan titik kejadian tetap mudah dilihat.
 
+Pada layar ponsel, legenda dan kontrol layer tetap tampil di atas peta. Pencarian dan daftar lokasi dapat dibuka terpisah agar area peta tetap leluasa.
+
 Sumber: [Peraturan BIG No. 3 Tahun 2016 — JDIH BIG](https://jdih.big.go.id/api/dokumen/file/d6b599f9-2d6e-481f-b084-00691daac989). Peta dasar menggunakan OpenStreetMap; lihat [ketentuan atribusinya](https://www.openstreetmap.org/copyright).
 
 ## Tim penyusun
