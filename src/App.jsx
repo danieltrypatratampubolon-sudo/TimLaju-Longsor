@@ -12,12 +12,12 @@ const locations = trainingPoints.map((point) => {
   const districtKey = `${point.class}-${point.kecamatan}`
   const number = (pointNumberByClassAndDistrict.get(districtKey) || 0) + 1
   pointNumberByClassAndDistrict.set(districtKey, number)
-  const category = isEvent ? 'Kejadian (valid)' : 'Non-kejadian (tidak valid)'
+  const category = isEvent ? 'Titik kejadian longsor' : 'Titik non-kejadian'
 
   return {
     ...point,
     name: isEvent
-      ? `Kejadian 2024-2025 - ${point.kecamatan} (${number})`
+      ? `Kejadian longsor (2024-2025) - ${point.kecamatan} (${number})`
       : `Non-kejadian - ${point.kecamatan} (${number})`,
     category,
     status: category,
@@ -280,26 +280,26 @@ function App() {
           />
           <div>
             <h1>Pemetaan Longsor</h1>
-            <p>Berbasis WebGIS</p>
+            <p>Kabupaten Karo | Sumatera Utara</p>
           </div>
         </header>
 
         <section className="search-box">
-          <label htmlFor="location-search">Cari lokasi</label>
+          <label htmlFor="location-search">Cari titik</label>
           <div className="search-row">
             <input
               id="location-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
-              placeholder="Nama titik atau kelas"
+              placeholder="Nama sekolah atau titik longsor"
             />
             <button type="button" onClick={handleSearch} aria-label="Cari">Cari</button>
           </div>
         </section>
 
         <section className="layer-panel">
-          <h2>Layer Peta</h2>
+          <h2>Tampilkan di peta</h2>
           <label className="check-row">
             <input type="checkbox" checked={showBoundaryLayer} onChange={(event) => setShowBoundaryLayer(event.target.checked)} />
             <span className="layer-swatch boundary-swatch" aria-hidden="true" />
@@ -324,7 +324,7 @@ function App() {
           <label className="check-row school-layer">
             <input type="checkbox" checked={showSchoolLayer} onChange={(event) => setShowSchoolLayer(event.target.checked)} />
             <span className="layer-swatch school-swatch" aria-hidden="true" />
-            <span>Sekolah Dasar</span>
+            <span>Sekolah dasar</span>
             <strong>{schoolLocations.length || 128}</strong>
           </label>
           <label className="check-row arterial-layer">
@@ -348,20 +348,20 @@ function App() {
           <label className="check-row event-layer">
             <input type="checkbox" checked={showEventLayer} onChange={(event) => setShowEventLayer(event.target.checked)} />
             <span className="layer-swatch event-swatch" aria-hidden="true" />
-            <span>Kejadian (valid)</span>
+            <span>Titik kejadian longsor</span>
             <strong>{eventCount}</strong>
           </label>
           <label className="check-row non-event-layer">
             <input type="checkbox" checked={showNonEventLayer} onChange={(event) => setShowNonEventLayer(event.target.checked)} />
             <span className="layer-swatch non-event-swatch" aria-hidden="true" />
-            <span>Non-kejadian (tidak valid)</span>
+            <span>Titik non-kejadian</span>
             <strong>{nonEventCount}</strong>
           </label>
         </section>
 
         <section className="location-list">
           <div className="section-title">
-            <h2>Daftar Titik</h2>
+            <h2>Lokasi di peta</h2>
             <span>{filteredLocations.length}</span>
           </div>
           {filteredLocations.map((item) => (
@@ -374,16 +374,16 @@ function App() {
               <span className={`location-dot ${item.type === 'school' ? 'school-dot' : item.class === 1 ? 'event-dot' : 'non-event-dot'}`} />
               <span className="location-copy">
                 <strong>{item.name}</strong>
-                <small>{item.type === 'school' ? 'Sekolah Dasar' : `${item.category} - Kecamatan ${item.kecamatan}`}</small>
+                <small>{item.type === 'school' ? 'Sekolah dasar' : `${item.category} - Kecamatan ${item.kecamatan}`}</small>
               </span>
             </button>
           ))}
           {filteredLocations.length === 0 && (
-            <p className="empty-list">Titik tidak ditemukan.</p>
+            <p className="empty-list">Tidak ada lokasi yang cocok.</p>
           )}
         </section>
         <footer className="creators">
-          <h2>Pembuat</h2>
+          <h2>Tim penyusun</h2>
           <ol>
             <li>Daniel Try</li>
             <li>Daffa Afsajulianda</li>
@@ -395,12 +395,12 @@ function App() {
       <section className="map-area">
         <header className="map-header">
           <div>
-            <p>{selected ? 'Titik terpilih' : 'Batas administrasi'}</p>
+            <p>{selected ? 'Lokasi dipilih' : 'Cakupan peta'}</p>
             <h2>{selected?.name || 'Kabupaten Karo'}</h2>
           </div>
           {selected
             ? <div className="status"><span /> {selected.status}</div>
-            : <div className="status">{boundaryData?.features.length ?? 17} Kecamatan</div>}
+            : <div className="status">{boundaryData?.features.length ?? 17} kecamatan</div>}
         </header>
 
         <MapContainer center={[3.08, 98.27]} zoom={9} zoomControl={false} className="map">
@@ -502,16 +502,16 @@ function App() {
 
         {selected && (
           <article className="info-card">
-            <button type="button" className="close-info" aria-label="Tutup" onClick={() => setSelected(null)}>x</button>
+            <button type="button" className="close-info" aria-label="Tutup detail lokasi" onClick={() => setSelected(null)}>x</button>
             <p>{selected.category}</p>
             <h3>{selected.name}</h3>
             <dl>
               {selected.type === 'school'
-                ? <div><dt>Jenis</dt><dd>Sekolah Dasar</dd></div>
+                ? <div><dt>Jenjang</dt><dd>Sekolah dasar</dd></div>
                 : <>
                   <div><dt>Kecamatan</dt><dd>{selected.kecamatan}</dd></div>
                   <div><dt>Klasifikasi</dt><dd>{selected.category}</dd></div>
-                  <div><dt>Kelas sumber</dt><dd>{selected.class}</dd></div>
+                  <div><dt>Kelas data</dt><dd>{selected.class}</dd></div>
                 </>}
               <div><dt>Koordinat</dt><dd>{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</dd></div>
             </dl>
